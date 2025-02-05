@@ -3,8 +3,13 @@ import { after, before, beforeEach, describe, it, mock } from 'node:test'
 import { createPgPool, migrateWithPgClient } from '@filecoin-station/deal-observer-db'
 import { calculateActiveDealEpochs, daysAgo, daysFromNow, today } from './test-helpers.js'
 import { findAndSubmitUnsubmittedDeals } from '../lib/spark-api-submit-deals.js'
+/** @import {PgPool} from '@filecoin-station/deal-observer-db' */
+/** @import {Queryable} from '@filecoin-station/deal-observer-db' */
 
 describe('Submit deals to spark-api', () => {
+  /**
+   * @type {PgPool}
+   */
   let pgPool
 
   before(async () => {
@@ -91,6 +96,18 @@ describe('Submit deals to spark-api', () => {
   })
 })
 
+/**
+ * @param {Queryable} pgPool
+ * @param {Object} activeDeal
+ * @param {string} activeDeal.createdAt
+ * @param {string} activeDeal.startsAt
+ * @param {string} activeDeal.expiresAt
+ * @param {number} [activeDeal.minerId=2]
+ * @param {number} [activeDeal.clientId=3]
+ * @param {string} [activeDeal.pieceCid='cidone']
+ * @param {string | null} [activeDeal.payloadCid=null]
+ * @returns {Promise<void>}
+ */
 const givenActiveDeal = async (pgPool, { createdAt, startsAt, expiresAt, minerId = 2, clientId = 3, pieceCid = 'cidone', payloadCid = null }) => {
   const { activatedAtEpoch, termStart, termMin, termMax } = calculateActiveDealEpochs(createdAt, startsAt, expiresAt)
   await pgPool.query(
@@ -103,12 +120,7 @@ const givenActiveDeal = async (pgPool, { createdAt, startsAt, expiresAt, minerId
 
 // TODO: allow callers of this helper to define how many deals should be reported as skipped
 const createSubmitEligibleDealsMock = () => {
-  return mock.fn(
-    // original - unused param
-    () => {},
-    // implementation
-    async (deals) => {
-      return { ingested: deals.length, skipped: 0 }
-    }
-  )
+  return mock.fn(async (deals) => {
+    return { ingested: deals.length, skipped: 0 }
+  })
 }

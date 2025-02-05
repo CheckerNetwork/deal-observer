@@ -33,7 +33,11 @@ const poolConfig = {
   maxLifetimeSeconds: 60
 }
 
-const onError = err => {
+/**
+  * @param {Error} err
+  * @returns {void}
+  */
+const onError = (err) => {
   // Prevent crashing the process on idle client errors, the pool will recover
   // itself. If all connections are lost, the process will still crash.
   // https://github.com/brianc/node-postgres/issues/1324#issuecomment-308778405

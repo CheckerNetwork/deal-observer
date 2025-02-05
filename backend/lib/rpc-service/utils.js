@@ -2,6 +2,10 @@ import { base64pad } from 'multiformats/bases/base64'
 import { decode as cborDecode } from '@ipld/dag-cbor'
 import * as util from 'node:util'
 
+/**
+ * @param {string} data
+ * @returns
+ */
 const decodeCborInBase64 = (data) => {
   return cborDecode(base64pad.baseDecode(data))
 }
@@ -14,6 +18,7 @@ const decodeCborInBase64 = (data) => {
  */
 const rawEventEntriesToEvent = (rawEventEntries) => {
   // Each event is defined by a list of event entries which will parsed into a typed event
+  /** @type {Record<string, any>} */
   const event = {}
   let eventType
   for (const entry of rawEventEntries) {

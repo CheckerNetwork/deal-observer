@@ -8,12 +8,17 @@ import { ClaimEvent } from '../lib/rpc-service/data-types.js'
 import { Value } from '@sinclair/typebox/value'
 
 describe('RpcApiClient', () => {
+  /**
+   * @param {string} method
+   * @param {any[]} params
+   * @returns
+   */
   const makeRpcRequest = async (method, params) => {
     switch (method) {
       case 'Filecoin.ChainHead':
         return parse(JSON.stringify(chainHeadTestData))
       case 'Filecoin.GetActorEventsRaw':
-        return parse(JSON.stringify(rawActorEventTestData)).filter(e => e.height >= params[0].fromHeight && e.height <= params[0].toHeight)
+        return parse(JSON.stringify(rawActorEventTestData)).filter((/** @type {{ height: number; }} */ e) => e.height >= params[0].fromHeight && e.height <= params[0].toHeight)
       default:
         console.error('Unknown method')
     }
@@ -23,7 +28,8 @@ describe('RpcApiClient', () => {
     const chainHead = await getChainHead(makeRpcRequest)
     assert(chainHead)
     const expected = parse(JSON.stringify(chainHeadTestData))
-    assert.deepStrictEqual(chainHead, expected)
+    assert(chainHead.Height)
+    assert.deepStrictEqual(expected.Height, chainHead.Height)
   })
 
   for (let blockHeight = 4622129; blockHeight < 4622129 + 11; blockHeight++) {

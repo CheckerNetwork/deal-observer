@@ -7,7 +7,7 @@ import * as Sentry from '@sentry/node'
  *
  * @param {PgPool} pgPool
  * @param {number} batchSize
- * @param {(eligibleDeals: Array) => Promise<{ingested: number; skipped: number}>} submitDeals
+ * @param {(eligibleDeals: Array<any>) => Promise<{ingested: number; skipped: number}>} submitDeals
  * @returns {Promise<{submitted: number; ingested: number; skipped: number;}>} Number of deals submitted, ingested and skipped
  */
 export const findAndSubmitUnsubmittedDeals = async (pgPool, batchSize, submitDeals) => {
@@ -45,7 +45,7 @@ export const findAndSubmitUnsubmittedDeals = async (pgPool, batchSize, submitDea
  *
  * @param {PgPool} pgPool
  * @param {number} batchSize
- * @returns {AsyncGenerator<Array>}
+ * @returns {AsyncGenerator<Array<any>>}
  */
 const findUnsubmittedDeals = async function * (pgPool, batchSize) {
   const client = await pgPool.connect()
@@ -82,7 +82,7 @@ const findUnsubmittedDeals = async function * (pgPool, batchSize) {
  * Mark deals as submitted.
  *
  * @param {Queryable} pgPool
- * @param {Array} eligibleDeals
+ * @param {Array<any>} eligibleDeals
  */
 const markDealsAsSubmitted = async (pgPool, eligibleDeals) => {
   await pgPool.query(`
@@ -112,7 +112,7 @@ const markDealsAsSubmitted = async (pgPool, eligibleDeals) => {
  *
  * @param {string} sparkApiBaseURL
  * @param {string} sparkApiToken
- * @param {Array} deals
+ * @param {Array<any>} deals
  * @returns {Promise<{ingested: number; skipped: number}>}
  */
 export const submitDealsToSparkApi = async (sparkApiBaseURL, sparkApiToken, deals) => {

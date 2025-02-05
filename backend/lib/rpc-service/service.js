@@ -4,7 +4,7 @@ import { encode as cborEncode } from '@ipld/dag-cbor'
 import { rawEventEntriesToEvent } from './utils.js'
 import { Value } from '@sinclair/typebox/value'
 import * as util from 'node:util'
-import { ClaimEvent, RawActorEvent, BlockEvent, RpcRespone } from './data-types.js'
+import { ClaimEvent, RawActorEvent, BlockEvent, RpcRespone, ChainHead } from './data-types.js'
 import pRetry from 'p-retry'
 /** @import { Static } from '@sinclair/typebox' */
 
@@ -40,8 +40,9 @@ export const rpcRequest = async (method, params) => {
   }
 }
 /**
- * @param {object} actorEventFilter
+ * @param {{fromHeight:number,toHeight:number,fields: any}} actorEventFilter
  * Returns actor events filtered by the given actorEventFilter
+ * @param {(method: string, params: any[]) => Promise<any>} makeRpcRequest
  * @returns {Promise<Array<Static<typeof BlockEvent>>>}
  */
 export async function getActorEvents (actorEventFilter, makeRpcRequest) {
@@ -52,7 +53,7 @@ export async function getActorEvents (actorEventFilter, makeRpcRequest) {
   }
   // TODO: handle reverted events
   // https://github.com/filecoin-station/deal-observer/issues/22
-  const typedRawEventEntries = rawEvents.map((rawEvent) => Value.Parse(RawActorEvent, rawEvent))
+  const typedRawEventEntries = rawEvents.map((/** @type {any} */ rawEvent) => Value.Parse(RawActorEvent, rawEvent))
   // An emitted event contains the height at which it was emitted, the emitter and the event itself
   const emittedEvents = []
   for (const typedEventEntries of typedRawEventEntries) {
@@ -81,10 +82,15 @@ export async function getActorEvents (actorEventFilter, makeRpcRequest) {
 
 /**
  * @param {function} makeRpcRequest
- * @returns {Promise<object>}
+ * @returns {Promise<Static<typeof ChainHead>>}
  */
 export async function getChainHead (makeRpcRequest) {
-  return await makeRpcRequest('Filecoin.ChainHead', [])
+  const result = await makeRpcRequest('Filecoin.ChainHead', [])
+  try {
+    return Value.Parse(ChainHead, result)
+  } catch (e) {
+    throw Error(util.format('Failed to parse chain head: %o', result))
+  }
 }
 
 /**

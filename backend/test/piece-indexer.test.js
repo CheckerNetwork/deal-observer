@@ -8,20 +8,29 @@ import assert from 'assert'
 import { minerPeerIds } from './test_data/minerInfo.js'
 import { payloadCIDs } from './test_data/payloadCIDs.js'
 import { indexPieces } from '../lib/piece-indexer.js'
+/** @import {PgPool} from '@filecoin-station/deal-observer-db' */
 
 describe('deal-observer-backend piece indexer', () => {
+  /**
+   * @param {string} method
+   * @param {any[]} params
+   * @returns
+   */
   const makeRpcRequest = async (method, params) => {
     switch (method) {
       case 'Filecoin.ChainHead':
         return parse(JSON.stringify(chainHeadTestData))
       case 'Filecoin.GetActorEventsRaw':
-        return parse(JSON.stringify(rawActorEventTestData)).filter(e => e.height >= params[0].fromHeight && e.height <= params[0].toHeight)
+        return parse(JSON.stringify(rawActorEventTestData)).filter((/** @type {{ height: number; }} */ e) => e.height >= params[0].fromHeight && e.height <= params[0].toHeight)
       case 'Filecoin.StateMinerInfo':
         return minerPeerIds.get(params[0])
       default:
         console.error('Unknown method')
     }
   }
+  /**
+   * @type {PgPool}
+   */
   let pgPool
   before(async () => {
     pgPool = await createPgPool()
@@ -46,6 +55,11 @@ describe('deal-observer-backend piece indexer', () => {
 
   it('piece indexer loop function fetches deals where there exists no payload yet and updates the database entry', async (t) => {
     const getDealPayloadCidCalls = []
+    /**
+     * @param {number} providerId
+     * @param {string} pieceCid
+     * @returns {Promise<string | undefined>}
+     */
     const getDealPayloadCid = async (providerId, pieceCid) => {
       getDealPayloadCidCalls.push({ providerId, pieceCid })
       const payloadCid = payloadCIDs.get(JSON.stringify({ minerId: providerId, pieceCid }))

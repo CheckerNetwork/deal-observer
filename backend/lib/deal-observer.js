@@ -9,7 +9,7 @@ import { convertBlockEventToActiveDealDbEntry } from './utils.js'
 /**
  * @param {number} blockHeight
  * @param {Queryable} pgPool
- * @param {(method:string,params:object) => object} makeRpcRequest
+ * @param {(method:string,params:any[]) => Promise<any>} makeRpcRequest
  * @returns {Promise<void>}
  */
 export async function observeBuiltinActorEvents (blockHeight, pgPool, makeRpcRequest) {
@@ -94,11 +94,11 @@ export async function storeActiveDeals (activeDeals, pgPool) {
 /**
    * @param {Queryable} pgPool
    * @param {string} query
-   * @param {Array} args
+   * @param {Array<number | string>} args
    * @returns {Promise<Array<Static <typeof ActiveDealDbEntry>>>}
    */
 export async function loadDeals (pgPool, query, args = []) {
-  const result = (await pgPool.query(query, args)).rows.map(deal => {
+  const result = (await pgPool.query(query, args)).rows.map((/** @type {any} */ deal) => {
     // SQL used null, typebox needs undefined for null values
     Object.keys(deal).forEach(key => {
       if (deal[key] === null) {

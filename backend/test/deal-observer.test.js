@@ -3,10 +3,15 @@ import { after, before, beforeEach, describe, it } from 'node:test'
 import { createPgPool, migrateWithPgClient } from '@filecoin-station/deal-observer-db'
 import { fetchDealWithHighestActivatedEpoch, countStoredActiveDeals, loadDeals, storeActiveDeals } from '../lib/deal-observer.js'
 import { Value } from '@sinclair/typebox/value'
-import { BlockEvent } from '../lib/rpc-service/data-types.js'
+import { BlockEvent, ClaimEvent } from '../lib/rpc-service/data-types.js'
 import { convertBlockEventToActiveDealDbEntry } from '../lib/utils.js'
+/** @import {PgPool} from '@filecoin-station/deal-observer-db' */
+/** @import { Static } from '@sinclair/typebox' */
 
 describe('deal-observer-backend', () => {
+  /**
+   * @type {PgPool}
+   */
   let pgPool
   before(async () => {
     pgPool = await createPgPool()
@@ -74,12 +79,15 @@ describe('deal-observer-backend', () => {
   })
 
   it('check number of stored deals', async () => {
+    /**
+     * @param {Static<typeof ClaimEvent>} eventData
+     */
     const storeBlockEvent = async (eventData) => {
       const event = Value.Parse(BlockEvent, { height: 1, event: eventData, emitter: 'f06' })
       const dbEntry = convertBlockEventToActiveDealDbEntry(event)
       await storeActiveDeals([dbEntry], pgPool)
     }
-    const data = {
+    const data = Value.Parse(ClaimEvent, {
       id: 1,
       provider: 2,
       client: 3,
@@ -89,7 +97,7 @@ describe('deal-observer-backend', () => {
       termMin: 12340,
       termMax: 12340,
       sector: 6n
-    }
+    })
     assert.strictEqual(await countStoredActiveDeals(pgPool), 0n)
     await storeBlockEvent(data)
     assert.strictEqual(await countStoredActiveDeals(pgPool), 1n)

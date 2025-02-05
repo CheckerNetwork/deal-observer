@@ -38,10 +38,17 @@ const RpcRespone = Type.Object({
   result: Type.Any()
 })
 
+const ChainHead = Type.Object({
+  Height: Type.Number(),
+  Blocks: Type.Any(),
+  Cids: Type.Any()
+})
+
 export {
   ClaimEvent,
   Entry,
   RawActorEvent,
   BlockEvent,
-  RpcRespone
+  RpcRespone,
+  ChainHead
 }

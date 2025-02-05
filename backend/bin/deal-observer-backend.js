@@ -11,6 +11,7 @@ import { fetchDealWithHighestActivatedEpoch, countStoredActiveDeals, observeBuil
 import { indexPieces } from '../lib/piece-indexer.js'
 import { findAndSubmitUnsubmittedDeals, submitDealsToSparkApi } from '../lib/spark-api-submit-deals.js'
 import { getDealPayloadCid } from '../lib/piece-indexer-service.js'
+/** @import {Queryable} from '@filecoin-station/deal-observer-db' */
 
 const {
   INFLUXDB_TOKEN,
@@ -37,6 +38,10 @@ assert(finalityEpochs <= maxPastEpochs)
 const pgPool = await createPgPool()
 const { recordTelemetry } = createInflux(INFLUXDB_TOKEN)
 
+/**
+ * @param {(method:string,params:any[]) => Promise<any>} makeRpcRequest
+ * @param {Queryable} pgPool
+ */
 const observeActorEventsLoop = async (makeRpcRequest, pgPool) => {
   const LOOP_NAME = 'Observe actor events'
   while (true) {
@@ -46,7 +51,7 @@ const observeActorEventsLoop = async (makeRpcRequest, pgPool) => {
       const lastInsertedDeal = await fetchDealWithHighestActivatedEpoch(pgPool)
       const startEpoch = Math.max(
         currentChainHead.Height - maxPastEpochs,
-        (lastInsertedDeal?.activated_at_epoch + 1) || 0
+        lastInsertedDeal ? (lastInsertedDeal.activated_at_epoch ?? -1) + 1 : 0
       )
       const endEpoch = currentChainHead.Height - finalityEpochs
 
@@ -57,7 +62,7 @@ const observeActorEventsLoop = async (makeRpcRequest, pgPool) => {
       const numberOfStoredDeals = await countStoredActiveDeals(pgPool)
       if (INFLUXDB_TOKEN) {
         recordTelemetry('observed_deals_stats', point => {
-          point.intField('last_searched_epoch', newLastInsertedDeal.activated_at_epoch)
+          point.intField('last_searched_epoch', newLastInsertedDeal?.activated_at_epoch || 0)
           point.intField('number_of_stored_active_deals', numberOfStoredDeals)
         })
       }
@@ -126,6 +131,11 @@ const sparkApiSubmitDealsLoop = async (pgPool, { sparkApiBaseUrl, sparkApiToken,
   }
 }
 
+/**
+ * @param {(method:string,params:object) => object} makeRpcRequest
+ * @param {(providerId:string,pieceCid:string) => Promise<string|null>} getDealPayloadCid
+ * @param {*} pgPool
+ */
 export const pieceIndexerLoop = async (makeRpcRequest, getDealPayloadCid, pgPool) => {
   const LOOP_NAME = 'Piece Indexer'
   while (true) {
