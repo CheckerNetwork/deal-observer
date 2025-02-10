@@ -39,7 +39,6 @@ const pgPool = await createPgPool()
 const { recordTelemetry } = createInflux(INFLUXDB_TOKEN)
 
 const observeActorEventsLoop = async (makeRpcRequest, pgPool) => {
-  const LOOP_NAME = 'Observe actor events'
   while (true) {
     const start = Date.now()
     try {
@@ -57,10 +56,10 @@ const observeActorEventsLoop = async (makeRpcRequest, pgPool) => {
       Sentry.captureException(e)
     }
     const dt = Date.now() - start
-    console.log(`Loop "${LOOP_NAME}" took ${dt}ms`)
+    console.log(`Loop "Observe actor events" took ${dt}ms`)
 
     if (INFLUXDB_TOKEN) {
-      recordTelemetry(`loop_${slug(LOOP_NAME, '_')}`, point => {
+      recordTelemetry('loop_builtin_actor_events', point => {
         point.intField('interval_ms', LOOP_INTERVAL)
         point.intField('duration_ms', dt)
       })
@@ -81,7 +80,6 @@ const observeActorEventsLoop = async (makeRpcRequest, pgPool) => {
  * @param {number} args.sparkApiSubmitDealsBatchSize
  */
 const sparkApiSubmitDealsLoop = async (pgPool, { sparkApiBaseUrl, sparkApiToken, sparkApiSubmitDealsBatchSize }) => {
-  const LOOP_NAME = 'Submit deals to spark-api'
   while (true) {
     const start = Date.now()
     try {
@@ -103,10 +101,10 @@ const sparkApiSubmitDealsLoop = async (pgPool, { sparkApiBaseUrl, sparkApiToken,
       Sentry.captureException(e)
     }
     const dt = Date.now() - start
-    console.log(`Loop "${LOOP_NAME}" took ${dt}ms`)
+    console.log(`Loop "Submit deals to spark-api" took ${dt}ms`)
 
     if (INFLUXDB_TOKEN) {
-      recordTelemetry(`loop_${slug(LOOP_NAME, '_')}`, point => {
+      recordTelemetry('loop_submit_deals_to_sparkapi', point => {
         point.intField('interval_ms', LOOP_INTERVAL)
         point.intField('duration_ms', dt)
       })
@@ -118,7 +116,6 @@ const sparkApiSubmitDealsLoop = async (pgPool, { sparkApiBaseUrl, sparkApiToken,
 }
 
 export const lookUpPayloadCidsLoop = async (makeRpcRequest, getDealPayloadCid, pgPool) => {
-  const LOOP_NAME = 'Look up payload CIDs'
   while (true) {
     const start = Date.now()
     // Maximum number of deals to look up payload CIDs for in one loop iteration
@@ -137,11 +134,11 @@ export const lookUpPayloadCidsLoop = async (makeRpcRequest, getDealPayloadCid, p
       Sentry.captureException(e)
     }
     const dt = Date.now() - start
-    console.log(`Loop "${LOOP_NAME}" took ${dt}ms`)
+    console.log(`Loop "Look up payload CIDs" took ${dt}ms`)
 
     // For local monitoring and debugging, we can omit sending data to InfluxDB
     if (INFLUXDB_TOKEN) {
-      recordTelemetry(`loop_${slug(LOOP_NAME, '_')}`, point => {
+      recordTelemetry('loop_look_up_payload_cids', point => {
         point.intField('interval_ms', LOOP_INTERVAL)
         point.intField('duration_ms', dt)
       })
