@@ -12,16 +12,16 @@ const THREE_DAYS_IN_MILLISECONDS = 1000 * 60 * 60 * 24 * 3
 /**
  *
  * @param {function} makeRpcRequest
- * @param {function} getDealPayloadCid
+ * @param {function} resolvePayloadCid
  * @param {Queryable} pgPool
  * @param {number} maxDeals
  * @returns {Promise<number>}
  */
-export const lookUpPayloadCids = async (makeRpcRequest, getDealPayloadCid, pgPool, maxDeals, now = Date.now()) => {
-  let missingPayloadCidsResolved = 0
+export const resolvePayloadCids = async (makeRpcRequest, resolvePayloadCid, pgPool, maxDeals, now = Date.now()) => {
+  let payloadCidsResolved = 0
   for (const deal of await fetchDealsWithUnresolvedPayloadCid(pgPool, maxDeals, new Date(now - THREE_DAYS_IN_MILLISECONDS))) {
     const minerPeerId = await getMinerPeerId(deal.miner_id, makeRpcRequest)
-    deal.payload_cid = await getDealPayloadCid(minerPeerId, deal.piece_cid)
+    deal.payload_cid = await resolvePayloadCid(minerPeerId, deal.piece_cid)
     if (!deal.payload_cid) {
       if (deal.last_payload_retrieval_attempt) {
         deal.payload_retrievability_state = PayloadRetrievabilityState.TerminallyUnretrievable
@@ -29,13 +29,13 @@ export const lookUpPayloadCids = async (makeRpcRequest, getDealPayloadCid, pgPoo
         deal.payload_retrievability_state = PayloadRetrievabilityState.Unresolved
       }
     } else {
-      missingPayloadCidsResolved++
+      payloadCidsResolved++
       deal.payload_retrievability_state = PayloadRetrievabilityState.Resolved
     }
     deal.last_payload_retrieval_attempt = new Date(now)
     await updatePayloadCidInActiveDeal(pgPool, deal, deal.payload_retrievability_state, deal.last_payload_retrieval_attempt, deal.payload_cid)
   }
-  return missingPayloadCidsResolved
+  return payloadCidsResolved
 }
 
 /**

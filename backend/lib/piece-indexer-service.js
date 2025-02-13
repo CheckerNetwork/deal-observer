@@ -16,7 +16,7 @@ const PieceIndexerErrorResponse = Type.Object({
  * @param {string} pieceCid
  * @returns {Promise<string|null>}
  */
-export const getDealPayloadCid = async (providerId, pieceCid) => {
+export const resolvePayloadCid = async (providerId, pieceCid) => {
   const url = PIECE_INDEXER_URL + '/sample/' + providerId + '/' + pieceCid
   try {
     const response = await pRetry(async () => await fetch(url, {
@@ -30,7 +30,7 @@ export const getDealPayloadCid = async (providerId, pieceCid) => {
       if (parsedPixResponse.error === 'PROVIDER_OR_PIECE_NOT_FOUND') {
         return null
       }
-    } catch {}
+    } catch { }
 
     try {
       const parsedPixResponse = Value.Parse(PieceIndexerResponse, json)
