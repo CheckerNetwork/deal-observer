@@ -31,7 +31,8 @@ const RawActorEvent = Type.Object({
 const BlockEvent = Type.Object({
   height: Type.Number(),
   emitter: Type.String(),
-  event: ClaimEvent
+  event: ClaimEvent,
+  reverted: Type.Boolean()
 })
 
 const RpcRespone = Type.Object({

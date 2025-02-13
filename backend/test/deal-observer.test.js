@@ -9,6 +9,7 @@ import { PayloadRetrievabilityState } from '@filecoin-station/deal-observer-db/l
 import { chainHeadTestData } from './test_data/chainHead.js'
 import { rawActorEventTestData } from './test_data/rawActorEvent.js'
 import { parse } from '@ipld/dag-json'
+import { countRevertedActiveDeals } from '../lib/look-up-payload-cids.js'
 
 describe('deal-observer-backend', () => {
   let pgPool
@@ -38,7 +39,7 @@ describe('deal-observer-backend', () => {
       sector: 6n,
       payload_cid: undefined
     }
-    const event = Value.Parse(BlockEvent, { height: 1, event: eventData, emitter: 'f06' })
+    const event = Value.Parse(BlockEvent, { height: 1, event: eventData, emitter: 'f06', reverted: false })
     const dbEntry = convertBlockEventToActiveDealDbEntry(event)
     await storeActiveDeals([dbEntry], pgPool)
     const actualData = await loadDeals(pgPool, 'SELECT * FROM active_deals')
@@ -54,7 +55,8 @@ describe('deal-observer-backend', () => {
       sector_id: eventData.sector,
       payload_cid: undefined,
       payload_retrievability_state: PayloadRetrievabilityState.NotQueried,
-      last_payload_retrieval_attempt: undefined
+      last_payload_retrieval_attempt: undefined,
+      reverted: false
     }
     assert.deepStrictEqual(actualData, [expectedData])
   })
@@ -73,7 +75,7 @@ describe('deal-observer-backend', () => {
       payload_retrievability_state: PayloadRetrievabilityState.NotQueried,
       last_payload_retrieval_attempt: undefined
     }
-    const event = Value.Parse(BlockEvent, { height: 1, event: eventData, emitter: 'f06' })
+    const event = Value.Parse(BlockEvent, { height: 1, event: eventData, emitter: 'f06', reverted: false })
     const dbEntry = convertBlockEventToActiveDealDbEntry(event)
     await storeActiveDeals([dbEntry], pgPool)
     const expected = await loadDeals(pgPool, 'SELECT * FROM active_deals')
@@ -83,7 +85,7 @@ describe('deal-observer-backend', () => {
 
   it('check number of stored deals', async () => {
     const storeBlockEvent = async (eventData) => {
-      const event = Value.Parse(BlockEvent, { height: 1, event: eventData, emitter: 'f06' })
+      const event = Value.Parse(BlockEvent, { height: 1, event: eventData, emitter: 'f06', reverted: false })
       const dbEntry = convertBlockEventToActiveDealDbEntry(event)
       await storeActiveDeals([dbEntry], pgPool)
     }
@@ -106,6 +108,40 @@ describe('deal-observer-backend', () => {
     data.provider = 3
     await storeBlockEvent(data)
     assert.strictEqual(await countStoredActiveDeals(pgPool), 2n)
+  })
+
+  it('check number of reverted stored deals', async () => {
+    const storeBlockEvent = async (eventData, reverted) => {
+      const event = Value.Parse(BlockEvent, { height: 1, event: eventData, emitter: 'f06', reverted })
+      const dbEntry = convertBlockEventToActiveDealDbEntry(event)
+      await storeActiveDeals([dbEntry], pgPool)
+    }
+    const data = {
+      id: 1,
+      provider: 2,
+      client: 3,
+      pieceCid: 'baga6ea4seaqc4z4432snwkztsadyx2rhoa6rx3wpfzu26365wvcwlb2wyhb5yfi',
+      pieceSize: 4n,
+      termStart: 5,
+      termMin: 12340,
+      termMax: 12340,
+      sector: 6n
+    }
+    assert.strictEqual(await countRevertedActiveDeals(pgPool), 0n)
+    await storeBlockEvent(data, false)
+    assert.strictEqual(await countRevertedActiveDeals(pgPool), 0n)
+    data.id = 2
+    data.provider = 3
+    await storeBlockEvent(data, true)
+    assert.strictEqual(await countRevertedActiveDeals(pgPool), 1n)
+    data.id = 3
+    data.provider = 4
+    await storeBlockEvent(data, false)
+    assert.strictEqual(await countRevertedActiveDeals(pgPool), 1n)
+    data.id = 4
+    data.provider = 5
+    await storeBlockEvent(data, true)
+    assert.strictEqual(await countRevertedActiveDeals(pgPool), 2n)
   })
 })
 

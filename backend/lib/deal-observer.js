@@ -81,7 +81,8 @@ export async function storeActiveDeals (activeDeals, pgPool) {
           term_max,
           sector_id,
           payload_retrievability_state,
-          last_payload_retrieval_attempt
+          last_payload_retrieval_attempt,
+          reverted
         )
         VALUES (
           unnest($1::int[]),
@@ -94,8 +95,8 @@ export async function storeActiveDeals (activeDeals, pgPool) {
           unnest($8::int[]), 
           unnest($9::bigint[]),
           unnest($10::payload_retrievability_state[]),
-          unnest($11::timestamp[])
-
+          unnest($11::timestamp[]),
+          unnest($12::boolean[])
         )
         ON CONFLICT ON CONSTRAINT unique_active_deals DO NOTHING
       `
@@ -110,7 +111,8 @@ export async function storeActiveDeals (activeDeals, pgPool) {
       activeDeals.map(deal => deal.term_max),
       activeDeals.map(deal => deal.sector_id),
       activeDeals.map(deal => deal.payload_retrievability_state),
-      activeDeals.map(deal => deal.last_payload_retrieval_attempt)
+      activeDeals.map(deal => deal.last_payload_retrieval_attempt),
+      activeDeals.map(deal => deal.reverted)
     ])
   } catch (error) {
     // If any error occurs, roll back the transaction

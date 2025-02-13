@@ -56,6 +56,16 @@ export async function countStoredActiveDealsWithUnresolvedPayloadCid (pgPool) {
 }
 
 /**
+  * @param {Queryable} pgPool
+  * @returns {Promise<Array<Static<typeof ActiveDealDbEntry>>>}
+  */
+export async function countRevertedActiveDeals (pgPool) {
+  const query = 'SELECT COUNT(*) FROM active_deals WHERE reverted = TRUE'
+  const result = await pgPool.query(query)
+  return result.rows[0].count
+}
+
+/**
  * @param {Queryable} pgPool
  * @param {Static<typeof ActiveDealDbEntry>} deal
  * @param {Static< typeof PayloadRetrievabilityStateType>} newPayloadRetrievalState
