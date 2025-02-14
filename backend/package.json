@@ -19,7 +19,7 @@
     "@sentry/node": "^9.1.0",
     "@sinclair/typebox": "^0.34.16",
     "debug": "^4.4.0",
-    "multiformats": "^13.3.1",
+    "multiformats": "^13.3.2",
     "p-retry": "^6.2.1",
     "pg": "^8.13.3",
     "pg-cursor": "^2.12.3",
