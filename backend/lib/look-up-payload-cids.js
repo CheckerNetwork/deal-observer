@@ -67,22 +67,14 @@ async function updatePayloadCidInActiveDeal (pgPool, deal, newPayloadRetrievalSt
   const updateQuery = `
     UPDATE active_deals
     SET payload_cid = $1, payload_retrievability_state = $2, last_payload_retrieval_attempt = $3
-    WHERE activated_at_epoch = $4 AND miner_id = $5 AND client_id = $6 AND piece_cid = $7 AND piece_size = $8 AND term_start_epoch = $9 AND term_min = $10 AND term_max = $11 AND sector_id = $12
+    WHERE id = $4
   `
   try {
     await pgPool.query(updateQuery, [
       newPayloadCid,
       newPayloadRetrievalState,
       lastRetrievalAttemptTimestamp,
-      deal.activated_at_epoch,
-      deal.miner_id,
-      deal.client_id,
-      deal.piece_cid,
-      deal.piece_size,
-      deal.term_start_epoch,
-      deal.term_min,
-      deal.term_max,
-      deal.sector_id
+      deal.id
     ])
   } catch (error) {
     throw Error(util.format('Error updating payload of deal: ', deal), { cause: error })
