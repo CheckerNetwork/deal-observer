@@ -17,7 +17,7 @@
     "@ipld/dag-cbor": "^9.2.2",
     "@ipld/dag-json": "^10.2.3",
     "@sentry/node": "^9.1.0",
-    "@sinclair/typebox": "^0.34.16",
+    "@sinclair/typebox": "^0.34.22",
     "debug": "^4.4.0",
     "multiformats": "^13.3.1",
     "p-retry": "^6.2.1",
